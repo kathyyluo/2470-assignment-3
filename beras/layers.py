@@ -1,3 +1,5 @@
+from turtle import shape
+
 import numpy as np
 
 from typing import Literal
@@ -18,13 +20,16 @@ class Dense(Diffable):
         """
         Forward pass for a dense layer! Refer to lecture slides for how this is computed.
         """
-        return NotImplementedError
+        return Tensor(x @ self.w + self.b)
 
     def get_input_gradients(self) -> list[Tensor]:
-        return NotImplementedError
+        return [Tensor(self.w)]
 
     def get_weight_gradients(self) -> list[Tensor]:
-        return NotImplementedError
+        x = self.inputs[0]
+        weight_grad = Tensor(x[:, :, np.newaxis])
+        bias_grad = Tensor(np.ones_like(self.b))
+        return [weight_grad, bias_grad]
 
     @staticmethod
     def _initialize_weight(initializer, input_size, output_size) -> tuple[Variable, Variable]:
@@ -53,4 +58,36 @@ class Dense(Diffable):
             "kaiming",
         ), f"Unknown dense weight initialization strategy '{initializer}' requested"
 
-        return None, None
+        shape = (input_size, output_size)
+        biases = Variable(np.zeros(output_size))
+
+        def truncated_normal(std):
+            adjusted_std = std / 0.87962566103423978
+            values = np.random.normal(0, adjusted_std, shape)
+            mask = np.abs(values) > 2 * adjusted_std
+
+            while np.any(mask):
+                values[mask] = np.random.normal(
+                    0, adjusted_std, np.sum(mask)
+                )
+                mask = np.abs(values) > 2 * adjusted_std
+
+            return values
+
+        if initializer == "zero":
+            values = np.zeros(shape)
+
+        elif initializer == "normal":
+            values = np.random.normal(0, 1, shape)
+
+        elif initializer == "xavier":
+            std = np.sqrt(2 / (input_size + output_size))
+            values = truncated_normal(std)
+
+        elif initializer == "kaiming":
+            std = np.sqrt(2 / input_size)
+            values = truncated_normal(std)
+
+        weights = Variable(values)
+        return weights, biases
+

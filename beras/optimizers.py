@@ -5,7 +5,9 @@ class BasicOptimizer:
     def __init__(self, learning_rate):
         self.learning_rate = learning_rate
     def apply_gradients(self, trainable_params, grads):
-        return NotImplementedError
+        for param, grad in zip(trainable_params, grads):
+            new_value = param - self.learning_rate * grad
+            param.assign(new_value)
 
 
 class RMSProp:
@@ -16,7 +18,15 @@ class RMSProp:
         self.v = defaultdict(lambda: 0)
 
     def apply_gradients(self, trainable_params, grads):
-        return NotImplementedError
+        for i, (param, grad) in enumerate(zip(trainable_params, grads)):
+            self.v[i] = self.beta * self.v[i] + (1 - self.beta) * grad ** 2
+
+            new_value = param - self.learning_rate * grad / (
+                np.sqrt(self.v[i]) + self.epsilon
+            )
+
+            param.assign(new_value)
+
 
 
 class Adam:
@@ -35,4 +45,17 @@ class Adam:
         self.t = 0                              # Time counter
 
     def apply_gradients(self, trainable_params, grads):
-        return NotImplementedError
+        self.t += 1
+
+        for i, (param, grad) in enumerate(zip(trainable_params, grads)):
+            self.m[i] = self.beta_1 * self.m[i] + (1 - self.beta_1) * grad
+            self.v[i] = self.beta_2 * self.v[i] + (1 - self.beta_2) * grad ** 2
+
+            m_hat = self.m[i] / (1 - self.beta_1 ** self.t)
+            v_hat = self.v[i] / (1 - self.beta_2 ** self.t)
+
+            new_value = param - self.learning_rate * m_hat / (
+                np.sqrt(v_hat) + self.epsilon
+            )
+
+            param.assign(new_value)

@@ -14,7 +14,18 @@ def load_and_preprocess_data() -> tuple[Tensor, Tensor, Tensor, Tensor]:
 
     ## TODO: Flatten (reshape) and normalize the inputs
     ## Hint: train and test inputs are numpy arrays so you can use np methods on them!
+    
+    train_inputs = train_inputs.reshape(-1, 28 * 28)
+    test_inputs = test_inputs.reshape(-1, 28 * 28)
 
+    train_inputs = train_inputs / 255.0
+    test_inputs = test_inputs / 255.0
 
     ## TODO: Convert all of the data into Tensors (constructor in core.py)
+    train_inputs = Tensor(train_inputs)
+    train_labels = Tensor(train_labels)
 
+    test_inputs = Tensor(test_inputs)
+    test_labels = Tensor(test_labels)
+
+    return train_inputs, train_labels, test_inputs, test_labels 
